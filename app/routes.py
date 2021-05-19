@@ -98,6 +98,7 @@ def get_all_videos():
 
     return jsonify([video.get_video_info() for video in videos])
 
+
 @videos_bp.route("", methods=["POST"])
 def post_new_customer():
     request_body = request.get_json()
@@ -116,9 +117,14 @@ def post_new_customer():
         "id": new_video.video_id
     }, 201)
 
+
 @videos_bp.route("/<video_id>", methods=["GET"])
 def get_single_video(video_id):
-    pass
+    video = Video.query.get(video_id)
+    if video is None:
+        return make_response(detail_error("Video does not exist"), 404)
+    
+    return jsonify(video.get_video_info())
 
 @videos_bp.route("/<video_id>", methods=["PUT"])
 def update_video(video_id):
