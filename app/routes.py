@@ -126,6 +126,7 @@ def get_single_video(video_id):
     
     return jsonify(video.get_video_info())
 
+
 @videos_bp.route("/<video_id>", methods=["PUT"])
 def update_video(video_id):
     video = Video.query.get(video_id)
@@ -143,9 +144,19 @@ def update_video(video_id):
 
     return jsonify(video.get_video_info())
 
+
 @videos_bp.route("/<video_id>", methods=["DELETE"])
 def delete_video(video_id):
-    pass
+    video = Video.query.get(video_id)
+    if video is None:
+        return make_response(detail_error("Video does not exist"), 404)
+
+    db.session.delete(video)
+    db.session.commit()
+
+    return {
+        "id": video.video_id
+    }
 
 
 
