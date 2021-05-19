@@ -17,3 +17,9 @@ class Video(db.Model):
             "available_inventory": self.total_inventory
         }
         return video_info
+
+    def from_json(self, request_body):
+        self.title = request_body['title']
+        self.release_date = request_body['release_date']
+        self.total_inventory = request_body['total_inventory']
+        return self

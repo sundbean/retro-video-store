@@ -128,7 +128,20 @@ def get_single_video(video_id):
 
 @videos_bp.route("/<video_id>", methods=["PUT"])
 def update_video(video_id):
-    pass
+    video = Video.query.get(video_id)
+    if video is None:
+        return make_response(detail_error("Video does not exist"), 404)
+
+    request_body = request.get_json()
+
+    try:
+        video = video.from_json(request_body)
+    except KeyError as e:
+        return make_response(detail_error("Invalid or missing data"), 400)
+
+    db.session.commit()
+
+    return jsonify(video.get_video_info())
 
 @videos_bp.route("/<video_id>", methods=["DELETE"])
 def delete_video(video_id):
