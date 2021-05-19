@@ -77,7 +77,16 @@ def update_customer(customer_id):
 
 @customers_bp.route("/<customer_id>", methods=["DELETE"])
 def delete_customer(customer_id):
-    pass
+    customer = Customer.query.get(customer_id)
+    if customer is None:
+        return make_response(detail_error("Customer does not exist"), 404)
+
+    db.session.delete(customer)
+    db.session.commit()
+
+    return {
+        "id": customer.customer_id
+    }
 
 
 
