@@ -2,13 +2,15 @@ from flask import Blueprint, make_response, request, jsonify
 from app import db
 from app.models.video import Video
 from app.models.customer import Customer
+from app.models.rental import Rental
 from sqlalchemy import exc
+import datetime
 import requests
 import os
 
 videos_bp = Blueprint("videos", __name__, url_prefix="/videos")
 customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
-rental_bp = Blueprint("rentals", __name__, url_prefix="/rentals")
+rentals_bp = Blueprint("rentals", __name__, url_prefix="/rentals")
 
 #######################################################
 ################### CRUD CUSTOMERS ####################
@@ -165,8 +167,27 @@ def delete_video(video_id):
 ################### CRUD RENTALS ######################
 #######################################################
 
+# @rentals_bp.route("/check-out", methods=["POST"])
+# def check_out_video_to_customer():
+#     request_body = request.get_json()
 
+#     try:
+#         video = Video.query.get(request_body["video_id"])
+#     except KeyError as err:
+#         make_response(detail_error("Video does not exist"), 404)
+#     if video.available_inventory==0:
+#         make_response(detail_error("No available inventory for that title"), 400)
 
+#     try:
+#         customer = Customer.query.get(request_body["customer_id"])
+#     except KeyError as err:
+#         make_response(detail_error("Customer does not exist"), 404)
+
+#     rental_info = Rental(customer_id=request_body["customer_id"],
+#                             video_id=request_body["video_id"],
+#                             due_date=datetime.datetime.now() + datetime.timedelta(days=7))
+
+#     video.available_inventory = 
 
 
 ##################### HELPER FUNCTIONS #####################
