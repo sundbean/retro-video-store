@@ -8,9 +8,10 @@ import os
 
 videos_bp = Blueprint("videos", __name__, url_prefix="/videos")
 customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
+rental_bp = Blueprint("rentals", __name__, url_prefix="/rentals")
 
 #######################################################
-################ CRUD CUSTOMERS #######################
+################### CRUD CUSTOMERS ####################
 #######################################################
 
 # Exceptions for requests
@@ -158,6 +159,13 @@ def delete_video(video_id):
     return {
         "id": video.video_id
     }
+
+
+#######################################################
+################### CRUD RENTALS ######################
+#######################################################
+
+
 
 
 

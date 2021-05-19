@@ -1,6 +1,8 @@
 from flask import Flask, current_app
 from flask_sqlalchemy import SQLAlchemy
 from app import db
+from app.models.customer import Customer
+from app.models.video import Video
 
 class Rental(db.Model):
     rental_id = db.Column(db.Integer, primary_key=True)
@@ -17,7 +19,7 @@ class Rental(db.Model):
 
     def get_customers_for_video(self, id_of_video):
         results = db.session.query(Customer, Video, Rental)\
-            .join(Customer, Customer.customer_id==Rental.customer_id)\
             .join(Video, Video.video_id==Rental.video_id)\
+            .join(Customer, Customer.customer_id==Rental.customer_id)\
             .filter(Video.video_id==id_of_video).all()
         return results
