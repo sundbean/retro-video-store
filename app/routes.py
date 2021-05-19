@@ -59,7 +59,20 @@ def get_single_customer(customer_id):
 
 @customers_bp.route("/<customer_id>", methods=["PUT"])
 def update_customer(customer_id):
-    pass
+    customer = Customer.query.get(customer_id)
+    if customer is None:
+        return make_response(detail_error("Customer does not exist"), 404)
+
+    request_body = request.get_json()
+
+    try:
+        customer = customer.from_json(request_body)
+    except KeyError as e:
+        return make_response(detail_error("Invalid or missing data"), 400)
+
+    db.session.commit()
+
+    return customer.get_customer_info()
 
 
 @customers_bp.route("/<customer_id>", methods=["DELETE"])

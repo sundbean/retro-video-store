@@ -19,3 +19,9 @@ class Customer(db.Model):
             "videos_checked_out_count": 0
         }
         return customer_info
+
+    def from_json(self, request_body):
+        self.name = request_body['name']
+        self.postal_code = request_body['postal_code']
+        self.phone = request_body['phone']
+        return self
