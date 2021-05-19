@@ -2,6 +2,7 @@ from flask import Blueprint, make_response, request, jsonify
 from app import db
 from app.models.video import Video
 from app.models.customer import Customer
+from sqlalchemy import exc
 import requests
 import os
 
@@ -35,7 +36,7 @@ def post_new_customer():
         new_customer = Customer(name=request_body["name"],
                                 postal_code=request_body["postal_code"],
                                 phone=request_body["phone"])
-    except KeyError as e:
+    except (KeyError, TypeError, exc.SQLAlchemyError) as e:
         return make_response(detail_error("Invalid data"), 400)
 
     db.session.add(new_customer)
@@ -65,7 +66,7 @@ def update_customer(customer_id):
 
     try:
         customer = customer.from_json(request_body)
-    except KeyError as e:
+    except (KeyError, TypeError, exc.SQLAlchemyError) as e:
         return make_response(detail_error("Invalid or missing data"), 400)
 
     db.session.commit()
@@ -105,12 +106,12 @@ def post_new_customer():
 
     try:
         new_video = Video(title=request_body["title"],
-                          release_date=request_body['release_date'],
-                          total_inventory=request_body['total_inventory'])
-    except KeyError as e:
-        return make_response(detail_error("Invaid data", 400))
+                            release_date=request_body['release_date'],
+                            total_inventory=request_body['total_inventory'])
+    except (KeyError, TypeError, exc.SQLAlchemyError):
+        return make_response(detail_error("Missing or invalid data"), 400)
 
-    db.session.add(new_task)
+    db.session.add(new_video)
     db.session.commit()
 
     return make_response({

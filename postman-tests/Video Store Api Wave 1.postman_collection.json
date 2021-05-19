@@ -80,7 +80,7 @@
 									"",
 									"pm.test(\"Response must be json with id key\", function() {",
 									"    const responseJson = pm.response.json();",
-									"    pm.expect(responseJson).to.have.all.keys(['id']);",
+									"    pm.expect(responseJson).to.have.property('id');",
 									"    pm.expect(responseJson['id']).to.be.a(\"number\");",
 									"    pm.collectionVariables.set('newCustomerId', responseJson['id']);",
 									"});"
@@ -369,7 +369,7 @@
 									"pm.test(\"Response must an id-key-value pair\", function() {",
 									"    const res = pm.response.json();",
 									"    ",
-									"    pm.expect(Object.keys(res)).to.have.members(['id'])",
+									"    pm.expect(res).to.have.property('id');",
 									"    pm.expect(res['id']).to.equal(pm.collectionVariables.get('newCustomerId'));",
 									"});"
 								],
@@ -619,7 +619,7 @@
 									"",
 									"pm.test(\"Response must be json with id key\", function() {",
 									"    const responseJson = pm.response.json();",
-									"    pm.expect(responseJson).to.have.all.keys(['id']);",
+									"    pm.expect(responseJson).to.have.property('id');",
 									"    pm.expect(responseJson['id']).to.be.a(\"number\");",
 									"    pm.collectionVariables.set('newVideoId', responseJson['id']);",
 									"});"
@@ -857,7 +857,7 @@
 									"pm.test(\"Response must include the id of the deleted video\", function() {",
 									"    const res = pm.response.json();",
 									"    ",
-									"    pm.expect(Object.keys(res)).to.have.members(['id'])",
+									"    pm.expect(res).to.have.property('id');",
 									"            ",
 									"",
 									"    pm.expect(res['id']).to.equal(pm.collectionVariables.get('newVideoId'));",
