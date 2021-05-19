@@ -38,7 +38,7 @@ def post_new_customer():
     except KeyError as e:
         return make_response(detail_error("Invalid data"), 400)
 
-    db.session.add(new_task)
+    db.session.add(new_customer)
     db.session.commit()
 
     response = {
