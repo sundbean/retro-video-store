@@ -96,7 +96,9 @@ def delete_customer(customer_id):
 
 @videos_bp.route("", methods=["GET"])
 def get_all_videos():
-    pass
+    videos = Video.query.all()
+
+    return jsonify([video.get_video_info() for video in videos])
 
 @videos_bp.route("", methods=["POST"])
 def post_new_customer():
