@@ -23,3 +23,11 @@ class Rental(db.Model):
             .join(Customer, Customer.customer_id==Rental.customer_id)\
             .filter(Video.video_id==id_of_video).all()
         return results
+
+    def get_rental_info(self):
+        rental_info = {
+            "customer_id": self.customer_id,
+            "video_id": self.video_id,
+            "due_date": self.due_date,
+        }
+        return rental_info

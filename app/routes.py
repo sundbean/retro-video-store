@@ -183,12 +183,18 @@ def check_out_video_to_customer():
     except KeyError as err:
         make_response(detail_error("Customer does not exist"), 404)
 
-    rental_info = Rental(customer_id=request_body["customer_id"],
+    rental = Rental(customer_id=request_body["customer_id"],
                             video_id=request_body["video_id"],
                             due_date=datetime.datetime.now() + datetime.timedelta(days=7))
 
     video.available_inventory = video.available_inventory - 1
-    customer
+    customer.videos_checked_out_count = customer.videos_checked_out_count + 1
+
+    rental_info = rental.get_rental_info()
+    rental_info['videos_checked_out_count'] = customer.videos_checked_out_count
+    rental_info['available_inventory'] = video.available_inventory
+
+    return make_response(rental_info)
 
 
 ##################### HELPER FUNCTIONS #####################

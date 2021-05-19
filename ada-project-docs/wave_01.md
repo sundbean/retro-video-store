@@ -23,30 +23,29 @@ Our goal for this wave is to be able to do all CRUD actions for these two entiti
 
 It's crucial for all APIs to be able to handle errors. For every required endpoint described in this project, handle errors in this pattern.
 
-If something goes wrong, your API should return:
-- an appropriate [HTTP status code](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status)
-- a list of errors
+If something goes wrong...
+- Your API should return an appropriate HTTP status code.
+- For POST and PUT requests, responses with 4XX response codes should also return a response body with some indication of what went wrong.
 
-For this project, the list of errors should be formatted like this:
+
+If something goes wrong...
+- Your API should return an appropriate HTTP status code.
+- For POST and PUT requests, responses with 4XX response codes should also return a response body with some indication of what went wrong.
+
+This could be something as simple as:
 
 ```json
 {
-  "errors": {
-    "available_inventory": [
-      "can't be blank",
-      "is not a number"
-    ]
-  }
+        "details": "Invalid data"
 }
+```
 
-// ...or...
-
-{
-    "errors": [
-        "Not Found"
-    ]
-}
-
+...or something slightly more complex like:
+```json
+[
+   "title must be provided and it must be a string",
+   "total_inventory must be provided and it must be a number"
+]
 ```
 
 # Requirements
@@ -85,7 +84,7 @@ Status: `200`
     "id": 1,
     "name": "Shelley Rocha",
     "registered_at": "Wed, 29 Apr 2015 07:54:14 -0700",
-    "postal_code": "24309",
+    "postal_code": 24309,
     "phone": "(322) 510-8695",
     "videos_checked_out_count": 0
   },
@@ -93,7 +92,7 @@ Status: `200`
     "id": 2,
     "name": "Curran Stout",
     "registered_at": "Wed, 16 Apr 2014 21:40:20 -0700",
-    "postal_code": "94267",
+    "postal_code": 94267,
     "phone": "(908) 949-6758",
     "videos_checked_out_count": 0
   }
@@ -124,7 +123,7 @@ Status: `200`
     "id": 2,
     "name": "Curran Stout",
     "registered_at": "Wed, 16 Apr 2014 21:40:20 -0700",
-    "postal_code": "94267",
+    "postal_code": 94267,
     "phone": "(908) 949-6758",
     "videos_checked_out_count": 0
 }
@@ -142,7 +141,7 @@ Creates a new video with the given params.
 Request Body Param | Type | Details
 --- | --- | ---
 `name` | string | The name of the customer
-`postal_code` | string | The postal code of the customer
+`postal_code` | int | The postal code of the customer
 `phone` | string | The phone of the customer
 
 #### Response
@@ -176,7 +175,7 @@ Arg | Type | Details
 Request Body Param | Type | Details
 --- | --- | ---
 `name` | string | The name of the customer
-`postal_code` | string | The postal code of the customer
+`postal_code` | int | The postal code of the customer
 `phone` | string | The phone of the customer
 
 #### Response
@@ -190,7 +189,7 @@ Status: `200`
     "id": 2,
     "name": "Curran Stout",
     "registered_at": "Wed, 16 Apr 2014 21:40:20 -0700",
-    "postal_code": "94267",
+    "postal_code": 94267,
     "phone": "(908) 949-6758",
     "videos_checked_out_count": 0
 }
@@ -200,7 +199,7 @@ Status: `200`
 
 - The API should return back detailed errors and a status `404: Not Found` if this customer does not exist.
 - The API should return a `400: Bad Request`, if any of the request body fields are missing or invalid.
-  - For example if the `videos_checked_out_count` is not a number.
+  - For example if the `name` is an empty string or is not a string.
 
 ### `DELETE /customer/<id>`  details
 Deletes a specific customer.
@@ -367,7 +366,7 @@ Status: `200`
 
 - The API should return back detailed errors and a status `404: Not Found` if this video does not exist.
 - The API should return back a `400 Bad Request` response for missing or invalid fields in the request body.
-  - For example, if `total_inventory` or `available_inventory` are missing or not numbers
+  - For example, if `total_inventory` is missing or is not a number
 
 
 ### `DELETE /video/<id>`  details
