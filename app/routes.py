@@ -41,11 +41,9 @@ def post_new_customer():
     db.session.add(new_customer)
     db.session.commit()
 
-    response = {
+    return make_response({
         "id": new_customer.customer_id
-    }
-
-    return make_response(jsonify(response), 201)
+    }, 201)
 
 
 @customers_bp.route("/<customer_id>", methods=["GET"])
@@ -102,7 +100,21 @@ def get_all_videos():
 
 @videos_bp.route("", methods=["POST"])
 def post_new_customer():
-    pass
+    request_body = request.get_json()
+
+    try:
+        new_video = Video(title=request_body["title"],
+                          release_date=request_body['release_date'],
+                          total_inventory=request_body['total_inventory'])
+    except KeyError as e:
+        return make_response(detail_error("Invaid data", 400))
+
+    db.session.add(new_task)
+    db.session.commit()
+
+    return make_response({
+        "id": new_video.video_id
+    }, 201)
 
 @videos_bp.route("/<video_id>", methods=["GET"])
 def get_single_video(video_id):
