@@ -8,6 +8,7 @@ class Customer(db.Model):
     postal_code = db.Column(db.String)
     phone = db.Column(db.String)
     registered_at = db.Column(db.DateTime)
+    videos_checked_out_count = db.Column(db.Integer, default=0)
 
     def get_customer_info(self):
         customer_info = {
@@ -16,7 +17,7 @@ class Customer(db.Model):
             "registered_at": self.registered_at,
             "postal_code": self.postal_code,
             "phone": self.phone,
-            "videos_checked_out_count": 0
+            "videos_checked_out_count": self.videos_checked_out_count
         }
         return customer_info
 
