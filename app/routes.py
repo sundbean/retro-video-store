@@ -173,15 +173,15 @@ def check_out_video_to_customer():
 
     try:
         video = Video.query.get(request_body["video_id"])
-    except KeyError as err:
-        make_response(detail_error("Video does not exist"), 404)
-    if video.available_inventory==0:
-        make_response(detail_error("No available inventory for that title"), 400)
+    except exc.SQLAlchemyError as err:
+        return make_response(detail_error("Video does not exist"), 404)
+    if video.available_inventory == 0:
+        return make_response(detail_error("No available inventory for that title"), 400)
 
     try:
         customer = Customer.query.get(request_body["customer_id"])
-    except KeyError as err:
-        make_response(detail_error("Customer does not exist"), 404)
+    except exc.SQLAlchemyError as err:
+        return make_response(detail_error("Customer does not exist"), 404)
 
     rental = Rental(customer_id=request_body["customer_id"],
                             video_id=request_body["video_id"],
@@ -194,6 +194,8 @@ def check_out_video_to_customer():
     rental_info['videos_checked_out_count'] = customer.videos_checked_out_count
     rental_info['available_inventory'] = video.available_inventory
 
+    db.session.commit()
+    
     return make_response(rental_info)
 
 
