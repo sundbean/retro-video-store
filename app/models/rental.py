@@ -11,20 +11,6 @@ class Rental(db.Model):
     customer = db.relationship('Customer', backref='customer_with_video')
     video = db.relationship('Video', backref='rented_video')
 
-    def get_videos_for_customer(self, id_of_customer):
-        results = db.session.query(Customer, Video, Rental)\
-            .join(Customer, Customer.customer_id==Rental.customer_id)\
-            .join(Video, Video.video_id==Rental.video_id)\
-            .filter(Customer.customer_id==id_of_customer).all()
-        return results
-
-    def get_customers_for_video(self, id_of_video):
-        results = db.session.query(Customer, Video, Rental)\
-            .join(Video, Video.video_id==Rental.video_id)\
-            .join(Customer, Customer.customer_id==Rental.customer_id)\
-            .filter(Video.video_id==id_of_video).all()
-        return results
-
     def get_rental_info(self):
         rental_info = {
             "customer_id": self.customer_id,
