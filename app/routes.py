@@ -12,20 +12,17 @@ videos_bp = Blueprint("videos", __name__, url_prefix="/videos")
 customers_bp = Blueprint("customers", __name__, url_prefix="/customers")
 rentals_bp = Blueprint("rentals", __name__, url_prefix="/rentals")
 
+
 #######################################################
 ################### CRUD CUSTOMERS ####################
 #######################################################
 
-# Exceptions for requests
-# https://stackoverflow.com/questions/16511337/correct-way-to-try-except-using-python-requests-module
-
-# try:
-#     ...
-# except requests.exceptions.RequestException as e:
-#     ...
-
 @customers_bp.route("", methods=["GET"])
 def get_all_customers():
+    """
+    Input: none
+    Output: 200 OK, Returns a JSON list of customer dictionaries that detail customer information of all customers in database.
+    """
     customers = Customer.query.all()
 
     return jsonify([customer.get_customer_info() for customer in customers])
@@ -33,6 +30,11 @@ def get_all_customers():
 
 @customers_bp.route("", methods=["POST"])
 def post_new_customer():
+    """
+    Input: Request body = JSON dictionary with keys "name," "postal code," "phone."
+    Action: Using input information, adds new customer row to customer table in database.
+    Output: 201 Created with JSON dictionary containing id of newly added customer.
+    """
     request_body = request.get_json()
 
     try:
@@ -52,6 +54,10 @@ def post_new_customer():
 
 @customers_bp.route("/<customer_id>", methods=["GET"])
 def get_single_customer(customer_id):
+    """
+    Input: Customer id (in route)
+    Output: 200 OK, JSONified dictionary of customer information for specified customer id.
+    """
     customer = Customer.query.get(customer_id)
     if customer is None:
         return make_response(detail_error("Customer does not exist"), 404)
@@ -61,6 +67,11 @@ def get_single_customer(customer_id):
 
 @customers_bp.route("/<customer_id>", methods=["PUT"])
 def update_customer(customer_id):
+    """
+    Input: Customer id (in route), Request body = JSON dictionary with keys "name," "phone," "postal_code".
+    Action: Updates customer information in database's customer table at specified customer id.
+    Output: 200 OK, JSON (automatically converted) dictionary with updated customer information.
+    """
     customer = Customer.query.get(customer_id)
     if customer is None:
         return make_response(detail_error("Customer does not exist"), 404)
@@ -79,6 +90,11 @@ def update_customer(customer_id):
 
 @customers_bp.route("/<customer_id>", methods=["DELETE"])
 def delete_customer(customer_id):
+    """
+    Input: Customer id (in route)
+    Action: Deletes customer row in database's customer table at specified customer id.
+    Output: 200 OK, JSON (automatically converted) dictionary with id of deleted customer.
+    """
     customer = Customer.query.get(customer_id)
     if customer is None:
         return make_response(detail_error("Customer does not exist"), 404)
@@ -93,9 +109,14 @@ def delete_customer(customer_id):
 
 @customers_bp.route("/<customer_id>/rentals", methods=["GET"])
 def get_rentals_by_customer(customer_id):
+    """
+    Input: Customer id (in route)
+    Output: 200 OK, JSON list of rental information dictionaries
+    """
     if Customer.query.get(customer_id) is None:
         return make_response(detail_error("Customer does not exist"), 404)
 
+    # This query gets all rental objects for specified customer id
     rentals = db.session.query(Rental)\
         .join(Customer, Customer.customer_id==Rental.customer_id)\
         .join(Video, Video.video_id==Rental.video_id)\
@@ -120,6 +141,10 @@ def get_rentals_by_customer(customer_id):
 
 @videos_bp.route("", methods=["GET"])
 def get_all_videos():
+    """
+    Input: none
+    Output: 200 OK, JSON list of dictionaries containing information for each video in video table
+    """
     videos = Video.query.all()
 
     return jsonify([video.get_video_info() for video in videos])
@@ -127,6 +152,11 @@ def get_all_videos():
 
 @videos_bp.route("", methods=["POST"])
 def post_new_customer():
+    """
+    Input: Request body = JSON dictionary with keys "title," "release_date," "total_inventory"
+    Action: Adds new row to video table with video information provided in the request body
+    Output: 201 Created response with JSON dictionary containing newly added video's id
+    """
     request_body = request.get_json()
 
     try:
@@ -146,6 +176,10 @@ def post_new_customer():
 
 @videos_bp.route("/<video_id>", methods=["GET"])
 def get_single_video(video_id):
+    """
+    Input: video id (in route)
+    Output: 200 OK, JSON dictionary of video information for specified video id
+    """
     video = Video.query.get(video_id)
     if video is None:
         return make_response(detail_error("Video does not exist"), 404)
@@ -155,6 +189,11 @@ def get_single_video(video_id):
 
 @videos_bp.route("/<video_id>", methods=["PUT"])
 def update_video(video_id):
+    """
+    Input: Video id (in route), JSON dictionary with keys "title", "release_date", "total_inventory" (required)
+    Action: Updates video information in database's video table at specified video id.
+    Output: 200 OK, JSON dictionary containing details of updated video.
+    """
     video = Video.query.get(video_id)
     if video is None:
         return make_response(detail_error("Video does not exist"), 404)
@@ -173,6 +212,11 @@ def update_video(video_id):
 
 @videos_bp.route("/<video_id>", methods=["DELETE"])
 def delete_video(video_id):
+    """
+    Input: Video id (in route)
+    Action: Deletes row in video table at specified video id
+    Output: 200 OK, JSON dictionary containing id of deleted video
+    """
     video = Video.query.get(video_id)
     if video is None:
         return make_response(detail_error("Video does not exist"), 404)
@@ -187,9 +231,14 @@ def delete_video(video_id):
 
 @videos_bp.route("/<video_id>/rentals", methods=["GET"])
 def get_rentals_by_video(video_id):
+    """
+    Input: video id (in route)
+    Output: 200 OK, JSON list of dictionaries containing details of each rental for the specified video id
+    """
     if Video.query.get(video_id) is None:
         return make_response(detail_error("Video does not exist"), 404)
 
+    # This query gets all rental objects at specified video id
     rentals = db.session.query(Rental)\
         .join(Video, Video.video_id==Rental.video_id)\
         .join(Customer, Customer.customer_id==Rental.customer_id)\
@@ -213,9 +262,14 @@ def get_rentals_by_video(video_id):
 ################### CRUD RENTALS ######################
 #######################################################
 
-# CLEAN UP THIS ERROR HANDLING!
 @rentals_bp.route("/check-out", methods=["POST"])
 def check_out_video_to_customer():
+    """
+    Input: Request body = JSON dictionary with required keys "customer_id", "video_id", "due_date"
+    Action: Adds new row in rental table using details provided in request body. Updates video and customer
+    information accordingly to "check out" the video to the customer. 
+    Output: 200 OK, JSON dictionary containing details of newly added rental.
+    """
     request_body = request.get_json()
 
     try:
@@ -250,6 +304,12 @@ def check_out_video_to_customer():
 
 @rentals_bp.route("/check-in", methods=["POST"])
 def check_in_rented_video():
+    """
+    Input: Request body = JSON dictionary with required keys "video_id" and "customer_id"
+    Action: "Checks in" the rental by updating customer and video information to reflect the return of the video, 
+    and deletes rental record from rental table.
+    Output: 200 OK, JSON dictionary with details of newly deleted rental.
+    """
     request_body = request.get_json()
 
     customer = Customer.query.get(request_body["customer_id"])
@@ -280,6 +340,10 @@ def check_in_rented_video():
 ##################### HELPER FUNCTIONS #####################
 
 def detail_error(error):
+    """
+    Input: Error message (string) detailing error
+    Output: Dictionary with error details for JSON response
+    """
     return {
         "errors": [
             error
