@@ -5,12 +5,11 @@ from app.models.customer import Customer
 from app.models.video import Video
 
 class Rental(db.Model):
-    rental_id = db.Column(db.Integer, primary_key=True)
     due_date = db.Column(db.DateTime)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'), primary_key=True)
     video_id = db.Column(db.Integer, db.ForeignKey('video.video_id'), primary_key=True)
-    customer = db.relationship('Customer', backref='customer_with_video', lazy=True)
-    video = db.relationship('Video', backref='rented_video', lazy=True)
+    customer = db.relationship('Customer', backref='customer_with_video')
+    video = db.relationship('Video', backref='rented_video')
 
     def get_videos_for_customer(self, id_of_customer):
         results = db.session.query(Customer, Video, Rental)\
