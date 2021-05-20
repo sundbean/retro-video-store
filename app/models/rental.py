@@ -8,8 +8,6 @@ class Rental(db.Model):
     due_date = db.Column(db.DateTime)
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.customer_id'), primary_key=True)
     video_id = db.Column(db.Integer, db.ForeignKey('video.video_id'), primary_key=True)
-    customer = db.relationship('Customer', backref='customer_with_video')
-    video = db.relationship('Video', backref='rented_video')
 
     def get_rental_info(self):
         rental_info = {
