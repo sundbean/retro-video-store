@@ -190,13 +190,9 @@ def check_out_video_to_customer():
     video.available_inventory = video.available_inventory - 1
     customer.videos_checked_out_count = customer.videos_checked_out_count + 1
 
-    rental_info = rental.get_rental_info()
-    rental_info['videos_checked_out_count'] = customer.videos_checked_out_count
-    rental_info['available_inventory'] = video.available_inventory
-
     db.session.commit()
-    
-    return make_response(rental_info)
+
+    return make_response(rental.get_rental_info())
 
 
 ##################### HELPER FUNCTIONS #####################
