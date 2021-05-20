@@ -187,8 +187,28 @@ def delete_video(video_id):
 
 
 @videos_bp.route("/<video_id>/rentals", methods=["GET"])
-def get_rentals_by_video():
-    pass
+def get_rentals_by_video(video_id):
+    if Video.query.get(video_id) is None:
+        return make_response(detail_error("Video does not exist"), 404)
+
+    rentals = db.session.query(Rental)\
+        .join(Video, Video.video_id==Rental.video_id)\
+        .join(Customer, Customer.customer_id==Rental.customer_id)\
+        .filter(Video.video_id==video_id).all()
+
+    results = []
+    for rental in rentals:
+        customer = Customer.query.get(rental.customer_id)
+        results.append({
+            "due_date": rental.due_date,
+            "name": customer.name,
+            "phone": customer.phone,
+            "postal_code": customer.postal_code
+        })
+    
+    return jsonify(results)
+
+
 
 #######################################################
 ################### CRUD RENTALS ######################
@@ -266,16 +286,6 @@ def detail_error(error):
             error
         ]
     }
-
-def get_rentals_by_customer(id_of_customer):
-    """
-    Returns a list of rental objects
-    """
-    results = db.session.query(Customer, Video, Rental)\
-        .join(Customer, Customer.customer_id==Rental.customer_id)\
-        .join(Video, Video.video_id==Rental.video_id)\
-        .filter(Customer.customer_id==id_of_customer).all()
-    return [result[2] for result in results]
 
 def get_rentals_by_video(id_of_video):
     """
