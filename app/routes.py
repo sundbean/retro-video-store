@@ -97,7 +97,10 @@ def get_rentals_by_customer(customer_id):
     if customer is None:
         return make_response(detail_error("Customer does not exist"), 404)
 
-    rentals = get_rentals_by_customer(customer_id)
+    rentals = db.session.query(Rental)\
+        .join(Customer, Customer.customer_id==Rental.customer_id)\
+        .join(Video, Video.video_id==Rental.video_id)\
+        .filter(Customer.customer_id==customer_id).all()
 
     results = []
     for rental in rentals:
@@ -182,6 +185,10 @@ def delete_video(video_id):
         "id": video.video_id
     }
 
+
+@videos_bp.route("/<video_id>/rentals", methods=["GET"])
+def get_rentals_by_video():
+    pass
 
 #######################################################
 ################### CRUD RENTALS ######################
