@@ -93,8 +93,7 @@ def delete_customer(customer_id):
 
 @customers_bp.route("/<customer_id>/rentals", methods=["GET"])
 def get_rentals_by_customer(customer_id):
-    customer = Customer.query.get(customer_id)
-    if customer is None:
+    if Customer.query.get(customer_id) is None:
         return make_response(detail_error("Customer does not exist"), 404)
 
     rentals = db.session.query(Rental)\
@@ -286,13 +285,3 @@ def detail_error(error):
             error
         ]
     }
-
-def get_rentals_by_video(id_of_video):
-    """
-    Returns a list of renal objects
-    """
-    results = db.session.query(Customer, Video, Rental)\
-        .join(Video, Video.video_id==Rental.video_id)\
-        .join(Customer, Customer.customer_id==Rental.customer_id)\
-        .filter(Video.video_id==id_of_video).all()
-    return [result[2] for result in results]
