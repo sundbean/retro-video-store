@@ -177,15 +177,17 @@ def check_out_video_to_customer():
         if video is None:
             make_response(detail_error("Video does not exist"), 404)
     except exc.SQLAlchemyError as err:
-        return make_response(detail_error("Invalid data"), 400)
+        return make_response(detail_error("Invalid video id"), 400)
 
     if video.available_inventory == 0:
         return make_response(detail_error("No available inventory for that title"), 400)
 
     try:
         customer = Customer.query.get(request_body["customer_id"])
+        if customer is None:
+            return make_response(detail_error("Customer does not exist"), 404)
     except exc.SQLAlchemyError as err:
-        return make_response(detail_error("Customer does not exist"), 404)
+        return make_response(detail_error("Invalid customer id"), 400)
 
     new_rental = Rental(customer_id=request_body["customer_id"],
                             video_id=request_body["video_id"],
@@ -204,27 +206,28 @@ def check_out_video_to_customer():
 def check_in_rented_video():
     request_body = request.get_json()
 
-    try:
-        customer = Customer.query.get(request_body["customer_id"])
-    except exc.SQLAlchemyError as err:
+    customer = Customer.query.get(request_body["customer_id"])
+    if customer is None:
         return make_response(detail_error("Customer does not exist"), 404)
 
-    try:
-        video = Video.query.get(request_body["video_id"])
-    except exc.SQLAlchemyError as err:
+    video = Video.query.get(request_body["video_id"])
+    if video is None:
         return make_response(detail_error("Video does not exist"), 404)
 
-    try:
-        rental = Rental.query.get({"rental_id": request_body["rental_id"], "customer_id": request_body["customer_id"]})
-    except exc.SQLAlchemyError as err:
+    rental = Rental.query.get({"video_id": request_body["video_id"], "customer_id": request_body["customer_id"]})
+    if rental is None:
         return make_response(detail_error("No matching record"), 400)
 
     video.available_inventory = video.available_inventory + 1
     customer.videos_checked_out_count = customer.videos_checked_out_count - 1
 
+    response = rental.get_rental_info()
+    del response["due_date"]
+
+    db.session.delete(rental)
     db.session.commit()
 
-    return make_response(rental.get_rental_info())
+    return response
 
 
 
