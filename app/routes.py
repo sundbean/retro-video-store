@@ -22,8 +22,17 @@ def get_all_customers():
     """
     Input: none
     Output: 200 OK, Returns a JSON list of customer dictionaries that detail customer information of all customers in database.
+    (Returned list is of all customers, sorted by ascending customer_id, unless query parameters specify otherwise)
     """
-    customers = Customer.query.all()
+    sort_query = request.args.get("sort")
+    filter_by_query = request.args.get("filter_by")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    if not sort_query:
+        sort_query = "customer_id"
+
+    customers = query_with_parameters(Customer, sort_query, filter_by_query, page_to_return, results_per_page)
 
     return jsonify([customer.get_customer_info() for customer in customers])
 
@@ -58,6 +67,7 @@ def get_single_customer(customer_id):
     Input: Customer id (in route)
     Output: 200 OK, JSONified dictionary of customer information for specified customer id.
     """
+    
     customer = Customer.query.get(customer_id)
     if customer is None:
         return make_response(detail_error("Customer does not exist"), 404)
@@ -113,6 +123,7 @@ def get_rentals_by_customer(customer_id):
     Input: Customer id (in route)
     Output: 200 OK, JSON list of rental information dictionaries
     """
+    
     if Customer.query.get(customer_id) is None:
         return make_response(detail_error("Customer does not exist"), 404)
 
@@ -144,8 +155,17 @@ def get_all_videos():
     """
     Input: none
     Output: 200 OK, JSON list of dictionaries containing information for each video in video table
+    (Default response is list of ALL videos ordered by video_id, unless query parameters specify otherwise)
     """
-    videos = Video.query.all()
+    sort_query = request.args.get("sort")
+    filter_by_query = request.args.get("filter_by")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    if not sort_query:
+        sort_query = "video_id"
+
+    videos = query_with_parameters(Video, sort_query, filter_by_query, page_to_return, results_per_page)
 
     return jsonify([video.get_video_info() for video in videos])
 
@@ -349,3 +369,16 @@ def detail_error(error):
             error
         ]
     }
+
+def query_with_parameters(model_name, order_by=None, filter_by=None, page=0, results_per_page=None):
+    query = db.session.query(model_name)
+    if order_by:
+        query = query.order_by(order_by)
+    if filter_by:
+        query = query.filter_by(filter_by)
+    if results_per_page:
+        query = query.limit(results_per_page)
+    if page:
+        page = int(page) - 1
+        query = query.offset(page * int(results_per_page))
+    return query
