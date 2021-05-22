@@ -116,18 +116,15 @@ def delete_customer(customer_id):
         "id": customer.customer_id
     }
 
-# BUG IN OPTIONAL ENHANCEMENT: When a video has been checked out more than once by the same customer, 
-# the rental only shows up once in the response. Why? This also ONLY applies if I'm trying to get both
-# rental records in the same response. If I include query parameters for p and n that separates the 
-# similar records into different pages, I can get each record by submitting multiple requests with different
-# p params.
+
 @customers_bp.route("/<customer_id>/rentals", methods=["GET"])
 def get_rentals_by_customer(customer_id):
     """
     Input: Customer id (in route)
     Output: 200 OK, JSON list of rental information dictionaries
     """
-    if Customer.query.get(customer_id) is None:
+    customer = Customer.query.get(customer_id)
+    if customer is None:
         return make_response(detail_error("Customer does not exist"), 404)
 
     # This query gets all rental objects for specified customer id
@@ -156,7 +153,42 @@ def get_rentals_by_customer(customer_id):
     return jsonify(results)
 
     
+# OPTIONAL ENHANCEMENT
+@customers_bp.route("/<customer_id>/history", methods=["GET"])
+def get_rental_history_for_customer(customer_id):
+    """
+    Input: URI parameter customer ID
+    Output: JSON list of dictionaries containing details of specified custoner's rental history.
+    """
+    if Customer.query.get(customer_id) is None:
+        return make_response(detail_error("Customer does not exist"), 404)
 
+    # This query gets all rental objects at specified customer id
+    rentals = db.session.query(Rental)\
+        .join(Video, Video.video_id==Rental.video_id)\
+        .join(Customer, Customer.customer_id==Rental.customer_id)\
+        .filter(Customer.customer_id==customer_id)\
+        .filter(Rental.returned_on_date != None)
+
+    # Lets consider query parameters in our resulting list of rentals
+    sort_query = request.args.get("sort")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    # Narrow down our results list according to query parameters
+    rentals = get_rentals_within_parameters(rentals, sort_query, page_to_return, results_per_page)
+
+    results = []
+    for rental in rentals:
+        checkout_date = rental.due_date - datetime.timedelta(days=7)
+        video = Video.query.get(rental.video_id)
+        results.append({
+            "title": video.title,
+            "checkout_date": checkout_date,
+            "due_date": rental.due_date
+        })
+
+    return jsonify(results)
 
 ##########################################################
 ###################### CRUD VIDEOS #######################
@@ -260,11 +292,6 @@ def delete_video(video_id):
     }
 
 
-# BUG IN OPTIONAL ENHANCEMENT: When a video has been checked out more than once by the same customer, 
-# the rental only shows up once in the response. Why? This also ONLY applies if I'm trying to get both
-# rental records in the same response. If I include query parameters for p and n that separates the 
-# similar records into different pages, I can get each record by submitting multiple requests with different
-# p params.
 @videos_bp.route("/<video_id>/rentals", methods=["GET"])
 def get_rentals_by_video(video_id):
     """
@@ -301,14 +328,57 @@ def get_rentals_by_video(video_id):
     return jsonify(results)
 
 
+# OPTIONAL ENHANCEMENT
+@videos_bp.route("/<video_id>/history", methods=["GET"])
+def get_rental_history_for_video(video_id):
+    """
+    Input: URI parameter "video_id"
+    Output: A JSON list of dictionaries that detail customer information for videos that have been checked out in the past.
+    """
+    if Video.query.get(video_id) is None:
+        return make_response(detail_error("Video does not exist"), 404)
+
+    # This query gets all rental objects at specified video id
+    rentals = db.session.query(Rental)\
+        .join(Video, Video.video_id==Rental.video_id)\
+        .join(Customer, Customer.customer_id==Rental.customer_id)\
+        .filter(Video.video_id==video_id)\
+        .filter(Rental.returned_on_date != None)
+
+    # Lets consider query parameters in our resulting list of rentals
+    sort_query = request.args.get("sort")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    # Narrow down our results list according to query parameters
+    rentals = get_rentals_within_parameters(rentals, sort_query, page_to_return, results_per_page)
+
+    results = []
+    for rental in rentals:
+        checkout_date = rental.due_date - datetime.timedelta(days=7)
+        customer = Customer.query.get(rental.customer_id)
+        results.append({
+            "customer_id": customer.customer_id,
+            "name": customer.name,
+            "postal_code": customer.postal_code,
+            "checkout_date": checkout_date,
+            "due_date": rental.due_date
+        })
+    
+    return jsonify(results)
 
 
 #######################################################
 ################### CRUD RENTALS ######################
 #######################################################
 
+# OPTIONAL ENHANCEMENT
 @rentals_bp.route("", methods=["GET"])
 def get_info_for_all_rentals():
+    """
+    Input: None
+    Output: A JSON list of dictionaries containing details for every rental in rental table.
+    """
     sort_query = request.args.get("sort")
     results_per_page = request.args.get("n")
     page_to_return = request.args.get("p")
@@ -379,20 +449,23 @@ def check_in_rented_video():
     rental = Rental.query.get({"video_id": request_body["video_id"], "customer_id": request_body["customer_id"]})
     if rental is None:
         return make_response(detail_error("No matching record"), 400)
+    if rental.returned_on_date:
+        return make_response(detail_error("Rental has already been checked in"), 400)
 
     video.available_inventory = video.available_inventory + 1
     customer.videos_checked_out_count = customer.videos_checked_out_count - 1
 
+    rental.returned_on_date = datetime.datetime.now()
+
     response = rental.get_rental_info()
     del response["due_date"]
 
-    db.session.delete(rental)
     db.session.commit()
 
     return response
 
 
-
+# OPTIONAL ENHANCEMENT
 @rentals_bp.route("/overdue", methods=["GET"])
 def get_overdue_rentals():
     """
@@ -400,7 +473,7 @@ def get_overdue_rentals():
     Output: A JSON list of rentals (and associated information) that are overdue.
     """
     # Get all rentals that are past due
-    rentals = Rental.query.filter(Rental.due_date < datetime.datetime.now())
+    rentals = Rental.query.filter(Rental.due_date < datetime.datetime.now()).filter(Rental.returned_on_date==None)
 
     sort_query = request.args.get("sort")
     results_per_page = request.args.get("n")
@@ -430,6 +503,7 @@ def get_overdue_rentals():
     return jsonify(results)
 
 
+
 ##################### HELPER FUNCTIONS #####################
 
 def detail_error(error):
@@ -444,6 +518,10 @@ def detail_error(error):
     }
 
 def query_with_parameters(model_name, order_by=None, page=0, results_per_page=None):
+    """
+    Input: only input required is Model name
+    Output: query according to input query parameters
+    """
     query = db.session.query(model_name)
     if order_by:
         query = query.order_by(order_by)
@@ -455,6 +533,10 @@ def query_with_parameters(model_name, order_by=None, page=0, results_per_page=No
     return query
 
 def get_rentals_within_parameters(rentals_list, order_by=None, page=0, results_per_page=None):
+    """
+    Input: only required input is a list of objects. As this helper function is used, a list of Rental objects.
+    Output: A narrowed down list of (Rental) objects that match the given query parameters.
+    """
     query = rentals_list
     if order_by:
         query = query.order_by(order_by)
