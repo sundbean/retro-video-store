@@ -25,14 +25,13 @@ def get_all_customers():
     (Returned list is of all customers, sorted by ascending customer_id, unless query parameters specify otherwise)
     """
     sort_query = request.args.get("sort")
-    filter_by_query = request.args.get("filter_by")
     results_per_page = request.args.get("n")
     page_to_return = request.args.get("p")
 
     if not sort_query:
         sort_query = "customer_id"
 
-    customers = query_with_parameters(Customer, sort_query, filter_by_query, page_to_return, results_per_page)
+    customers = query_with_parameters(Customer, sort_query, page_to_return, results_per_page)
 
     return jsonify([customer.get_customer_info() for customer in customers])
 
@@ -139,15 +138,11 @@ def get_rentals_by_customer(customer_id):
 
     # Lets consider query parameters in our resulting list of rentals
     sort_query = request.args.get("sort")
-    filter_by_query = request.args.get("filter_by")
     results_per_page = request.args.get("n")
     page_to_return = request.args.get("p")
 
-    if not sort_query:
-        sort_query = "customer_id"
-
     # Narrow down our results list according to query parameters
-    rentals = rentals_with_parameters(rentals, sort_query, filter_by_query, page_to_return, results_per_page)
+    rentals = get_rentals_within_parameters(rentals, sort_query, page_to_return, results_per_page)
 
     results = []
     for rental in rentals:
@@ -175,14 +170,13 @@ def get_all_videos():
     (Default response is list of ALL videos ordered by video_id, unless query parameters specify otherwise)
     """
     sort_query = request.args.get("sort")
-    filter_by_query = request.args.get("filter_by")
     results_per_page = request.args.get("n")
     page_to_return = request.args.get("p")
 
     if not sort_query:
         sort_query = "video_id"
 
-    videos = query_with_parameters(Video, sort_query, filter_by_query, page_to_return, results_per_page)
+    videos = query_with_parameters(Video, sort_query, page_to_return, results_per_page)
 
     return jsonify([video.get_video_info() for video in videos])
 
@@ -288,15 +282,11 @@ def get_rentals_by_video(video_id):
 
     # Lets consider query parameters in our resulting list of rentals
     sort_query = request.args.get("sort")
-    filter_by_query = request.args.get("filter_by")
     results_per_page = request.args.get("n")
     page_to_return = request.args.get("p")
 
-    if not sort_query:
-        sort_query = "video_id"
-
     # Narrow down our results list according to query parameters
-    rentals = rentals_with_parameters(rentals, sort_query, filter_by_query, page_to_return, results_per_page)
+    rentals = get_rentals_within_parameters(rentals, sort_query, page_to_return, results_per_page)
 
     results = []
     for rental in rentals:
@@ -316,6 +306,17 @@ def get_rentals_by_video(video_id):
 #######################################################
 ################### CRUD RENTALS ######################
 #######################################################
+
+@rentals_bp.route("", methods=["GET"])
+def get_info_for_all_rentals():
+    sort_query = request.args.get("sort")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    rentals = query_with_parameters(Rental, sort_query, page_to_return, results_per_page)
+    
+    return jsonify([rental.get_rental_info() for rental in rentals])
+
 
 @rentals_bp.route("/check-out", methods=["POST"])
 def check_out_video_to_customer():
@@ -392,6 +393,43 @@ def check_in_rented_video():
 
 
 
+@rentals_bp.route("/overdue", methods=["GET"])
+def get_overdue_rentals():
+    """
+    Input: optional query parameters are sort, n for num per page, and p for page
+    Output: A JSON list of rentals (and associated information) that are overdue.
+    """
+    # Get all rentals that are past due
+    rentals = Rental.query.filter(Rental.due_date < datetime.datetime.now())
+
+    sort_query = request.args.get("sort")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    if not sort_query:
+        sort_query = "video_id"
+
+    # Narrow down our rentals list by the query parameters
+    rentals = get_rentals_within_parameters(rentals, sort_query, page_to_return, results_per_page)
+
+    results = []
+    for rental in rentals:
+        checkout_date = rental.due_date - datetime.timedelta(days=7)
+        customer = Customer.query.get(rental.customer_id)
+        video = Video.query.get(rental.video_id)
+        results.append({
+            "video_id": video.video_id,
+            "title": video.title,
+            "customer_id": customer.customer_id,
+            "name": customer.name,
+            "postal_code": customer.postal_code,
+            "checkout_date": checkout_date,
+            "due_date": rental.due_date
+        })
+
+    return jsonify(results)
+
+
 ##################### HELPER FUNCTIONS #####################
 
 def detail_error(error):
@@ -405,12 +443,10 @@ def detail_error(error):
         ]
     }
 
-def query_with_parameters(model_name, order_by=None, filter_by=None, page=0, results_per_page=None):
+def query_with_parameters(model_name, order_by=None, page=0, results_per_page=None):
     query = db.session.query(model_name)
     if order_by:
         query = query.order_by(order_by)
-    if filter_by:
-        query = query.filter_by(filter_by)
     if results_per_page:
         query = query.limit(results_per_page)
     if page:
@@ -418,12 +454,10 @@ def query_with_parameters(model_name, order_by=None, filter_by=None, page=0, res
         query = query.offset(page * int(results_per_page))
     return query
 
-def rentals_with_parameters(rentals_list, order_by=None, filter_by=None, page=0, results_per_page=None):
+def get_rentals_within_parameters(rentals_list, order_by=None, page=0, results_per_page=None):
     query = rentals_list
     if order_by:
         query = query.order_by(order_by)
-    if filter_by:
-        query = query.filter_by(filter_by)
     if results_per_page:
         query = query.limit(results_per_page)
     if page:
