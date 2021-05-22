@@ -49,7 +49,8 @@ def post_new_customer():
     try:
         new_customer = Customer(name=request_body["name"],
                                 postal_code=request_body["postal_code"],
-                                phone=request_body["phone"])
+                                phone=request_body["phone"],
+                                registered_at=datetime.datetime.now())
     except (KeyError, TypeError, exc.SQLAlchemyError) as e:
         return make_response(detail_error("Invalid data"), 400)
 
@@ -249,6 +250,7 @@ def delete_video(video_id):
     }
 
 
+# BUG IN OPTIONAL ENHANCEMENT: When a video has been checked out more than once by the same customer, the rental only shows up once in the results. Why?
 @videos_bp.route("/<video_id>/rentals", methods=["GET"])
 def get_rentals_by_video(video_id):
     """
@@ -262,7 +264,19 @@ def get_rentals_by_video(video_id):
     rentals = db.session.query(Rental)\
         .join(Video, Video.video_id==Rental.video_id)\
         .join(Customer, Customer.customer_id==Rental.customer_id)\
-        .filter(Video.video_id==video_id).all()
+        .filter(Video.video_id==video_id)
+
+    # Lets consider query parameters in our resulting list of rentals
+    sort_query = request.args.get("sort")
+    filter_by_query = request.args.get("filter_by")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    if not sort_query:
+        sort_query = "video_id"
+
+    # Narrow down our results list according to query parameters
+    rentals = rentals_with_parameters(rentals, sort_query, filter_by_query, page_to_return, results_per_page)
 
     results = []
     for rental in rentals:
@@ -278,6 +292,7 @@ def get_rentals_by_video(video_id):
 
 
 
+
 #######################################################
 ################### CRUD RENTALS ######################
 #######################################################
@@ -285,7 +300,7 @@ def get_rentals_by_video(video_id):
 @rentals_bp.route("/check-out", methods=["POST"])
 def check_out_video_to_customer():
     """
-    Input: Request body = JSON dictionary with required keys "customer_id", "video_id", "due_date"
+    Input: Request body = JSON dictionary with required keys "customer_id", "video_id"
     Action: Adds new row in rental table using details provided in request body. Updates video and customer
     information accordingly to "check out" the video to the customer. 
     Output: 200 OK, JSON dictionary containing details of newly added rental.
@@ -372,6 +387,19 @@ def detail_error(error):
 
 def query_with_parameters(model_name, order_by=None, filter_by=None, page=0, results_per_page=None):
     query = db.session.query(model_name)
+    if order_by:
+        query = query.order_by(order_by)
+    if filter_by:
+        query = query.filter_by(filter_by)
+    if results_per_page:
+        query = query.limit(results_per_page)
+    if page:
+        page = int(page) - 1
+        query = query.offset(page * int(results_per_page))
+    return query
+
+def rentals_with_parameters(rentals_list, order_by=None, filter_by=None, page=0, results_per_page=None):
+    query = rentals_list
     if order_by:
         query = query.order_by(order_by)
     if filter_by:
