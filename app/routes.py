@@ -117,14 +117,17 @@ def delete_customer(customer_id):
         "id": customer.customer_id
     }
 
-
+# BUG IN OPTIONAL ENHANCEMENT: When a video has been checked out more than once by the same customer, 
+# the rental only shows up once in the response. Why? This also ONLY applies if I'm trying to get both
+# rental records in the same response. If I include query parameters for p and n that separates the 
+# similar records into different pages, I can get each record by submitting multiple requests with different
+# p params.
 @customers_bp.route("/<customer_id>/rentals", methods=["GET"])
 def get_rentals_by_customer(customer_id):
     """
     Input: Customer id (in route)
     Output: 200 OK, JSON list of rental information dictionaries
     """
-    
     if Customer.query.get(customer_id) is None:
         return make_response(detail_error("Customer does not exist"), 404)
 
@@ -132,13 +135,26 @@ def get_rentals_by_customer(customer_id):
     rentals = db.session.query(Rental)\
         .join(Customer, Customer.customer_id==Rental.customer_id)\
         .join(Video, Video.video_id==Rental.video_id)\
-        .filter(Customer.customer_id==customer_id).all()
+        .filter(Customer.customer_id==customer_id)
+
+    # Lets consider query parameters in our resulting list of rentals
+    sort_query = request.args.get("sort")
+    filter_by_query = request.args.get("filter_by")
+    results_per_page = request.args.get("n")
+    page_to_return = request.args.get("p")
+
+    if not sort_query:
+        sort_query = "customer_id"
+
+    # Narrow down our results list according to query parameters
+    rentals = rentals_with_parameters(rentals, sort_query, filter_by_query, page_to_return, results_per_page)
 
     results = []
     for rental in rentals:
+        video = Video.query.get(rental.video_id)
         results.append({
-            "release_date": Video.query.get(rental.video_id).release_date,
-            "title": Video.query.get(rental.video_id).title,
+            "release_date": video.release_date,
+            "title": video.title,
             "due_date": rental.due_date
         })
     
@@ -250,7 +266,11 @@ def delete_video(video_id):
     }
 
 
-# BUG IN OPTIONAL ENHANCEMENT: When a video has been checked out more than once by the same customer, the rental only shows up once in the results. Why?
+# BUG IN OPTIONAL ENHANCEMENT: When a video has been checked out more than once by the same customer, 
+# the rental only shows up once in the response. Why? This also ONLY applies if I'm trying to get both
+# rental records in the same response. If I include query parameters for p and n that separates the 
+# similar records into different pages, I can get each record by submitting multiple requests with different
+# p params.
 @videos_bp.route("/<video_id>/rentals", methods=["GET"])
 def get_rentals_by_video(video_id):
     """
