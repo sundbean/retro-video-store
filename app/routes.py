@@ -305,7 +305,8 @@ def get_rentals_by_video(video_id):
     rentals = db.session.query(Rental)\
         .join(Video, Video.video_id==Rental.video_id)\
         .join(Customer, Customer.customer_id==Rental.customer_id)\
-        .filter(Video.video_id==video_id)
+        .filter(Video.video_id==video_id)\
+        .filter(Rental.returned_on_date==None)
 
     # Lets consider query parameters in our resulting list of rentals
     sort_query = request.args.get("sort")
