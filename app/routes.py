@@ -214,9 +214,9 @@ def get_all_videos():
 
 
 @videos_bp.route("", methods=["POST"])
-def post_new_customer():
+def post_new_video():
     """
-    Input: Request body = JSON dictionary with keys "title," "release_date," "total_inventory"
+    Input: Request body = JSON dictionary with keys "title," "release_date," "total_inventory", "genre"
     Action: Adds new row to video table with video information provided in the request body
     Output: 201 Created response with JSON dictionary containing newly added video's id
     """
@@ -225,6 +225,7 @@ def post_new_customer():
     try:
         new_video = Video(title=request_body["title"],
                             release_date=request_body['release_date'],
+                            genre=request_body['genre'],
                             total_inventory=request_body['total_inventory'])
     except (KeyError, TypeError, exc.SQLAlchemyError):
         return make_response(detail_error("Missing or invalid data"), 400)
@@ -502,8 +503,6 @@ def get_overdue_rentals():
         })
 
     return jsonify(results)
-
-
 
 ##################### HELPER FUNCTIONS #####################
 

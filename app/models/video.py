@@ -11,6 +11,7 @@ class Video(db.Model):
     video_id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String)
     release_date = db.Column(db.DateTime)
+    genre = db.Column(db.String)
     total_inventory = db.Column(db.Integer)
     available_inventory = db.Column(db.Integer, default=default_available_inventory)
 
@@ -19,6 +20,7 @@ class Video(db.Model):
             "id": self.video_id,
             "title": self.title,
             "release_date": self.release_date,
+            "genre": self.genre,
             "total_inventory": self.total_inventory,
             "available_inventory": self.available_inventory
         }
@@ -28,4 +30,5 @@ class Video(db.Model):
         self.title = request_body['title']
         self.release_date = request_body['release_date']
         self.total_inventory = request_body['total_inventory']
+        self.genre = request_body['genre']
         return self
