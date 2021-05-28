@@ -11,7 +11,7 @@ class Video(db.Model):
     video_id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String)
     release_date = db.Column(db.DateTime)
-    genre = db.Column(db.String)
+    genre = db.Column(ARRAY(String))
     total_inventory = db.Column(db.Integer)
     available_inventory = db.Column(db.Integer, default=default_available_inventory)
 
