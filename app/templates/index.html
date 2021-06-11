@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>List all customers</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link href="./styles/stylesheet.css" rel="stylesheet">
+    </head>
+    <body>
+        <header>
+            <h1>Here's all the customers in our database:</h1>
+        </header>
+
+        <main class="cards">
+            {% for customer in customers_response: %}
+            <section class="customer-card">
+                <h4>Customer {{customer.id}}:</h4>
+                <p>Name: {{customer.name}}</p>
+                <p>Phone: {{customer.phone}}</p>
+                <p>Postal Code: {{Customer.postal_code}}</p>
+                <p>Registered on: {{Customer.registered_at}}</p>
+                <p>Videos checked out: {{Customer.videos_checked_out_count}}</p>
+            </section>
+            {% endfor %}
+
+        </main>
+        
+        <footer>
+            <p>That's it!</p>
+        </footer>
+    </body>
+</html>

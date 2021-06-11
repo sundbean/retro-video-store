@@ -1,0 +1,14 @@
+header {
+    background-color: grey;
+    color: white;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr 4fr 1fr;
+}
+
+.customer-card {
+    background-color: lightgrey;
+    grid-column: 2 / 5;
+}
